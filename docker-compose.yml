@@ -1,0 +1,76 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mafia-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mafia
+      POSTGRES_PASSWORD: mafia
+      POSTGRES_DB: mafia
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U mafia -d mafia']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: mafia-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    container_name: mafia-server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://mafia:mafia@postgres:5432/mafia?schema=public
+      REDIS_URL: redis://redis:6379
+      # CHANGE THIS. Generate with: openssl rand -base64 48
+      AUTH_SECRET: ${AUTH_SECRET:-change-me-this-is-not-a-production-secret}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      LOG_LEVEL: info
+    ports:
+      - '4000:4000'
+    # Apply migrations before serving, so a fresh volume comes up ready.
+    command: sh -c "npx prisma migrate deploy --schema prisma/schema.prisma && node dist/index.js"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+        NEXT_PUBLIC_SOCKET_SERVER_URL: ${NEXT_PUBLIC_SOCKET_SERVER_URL:-http://localhost:4000}
+    container_name: mafia-web
+    restart: unless-stopped
+    depends_on:
+      - server
+    ports:
+      - '3000:3000'
+
+volumes:
+  postgres-data:
+  redis-data:

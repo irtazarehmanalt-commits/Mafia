@@ -1,0 +1,207 @@
+// Mafia — persistence schema.
+//
+// Design notes:
+//  * The authoritative live game lives in memory inside a RoomRuntime and is
+//    mirrored to `Game.stateSnapshot` so a server restart does not destroy an
+//    in-flight game.
+//  * Secret role data is written only where recovery requires it. When a game
+//    ends, `GamePlayer.role`/`team` are cleared and the final, now-public
+//    roster is kept on `Game.result` instead.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RoomStatus {
+  LOBBY
+  IN_PROGRESS
+  FINISHED
+  CANCELLED
+}
+
+enum GameStatus {
+  ACTIVE
+  FINISHED
+  ABANDONED
+}
+
+enum Phase {
+  LOBBY
+  ROLE_REVEAL
+  NIGHT
+  NIGHT_RESOLUTION
+  DAY_ANNOUNCEMENT
+  DISCUSSION
+  VOTING
+  VOTE_RESOLUTION
+  GAME_OVER
+}
+
+enum Role {
+  MAFIA
+  DOCTOR
+  DETECTIVE
+  CIVILIAN
+}
+
+enum Team {
+  MAFIA
+  TOWN
+}
+
+enum EventVisibility {
+  PUBLIC
+  PRIVATE
+  SERVER
+}
+
+/// Optional registered account. Guests play without one.
+model User {
+  id           String       @id @default(uuid())
+  username     String       @unique
+  email        String?      @unique
+  passwordHash String?
+  createdAt    DateTime     @default(now())
+  players      GamePlayer[]
+  hostedRooms  GameRoom[]   @relation("RoomHost")
+
+  @@map("users")
+}
+
+model GameRoom {
+  id         String     @id @default(uuid())
+  roomCode   String     @unique
+  name       String
+  status     RoomStatus @default(LOBBY)
+  maxPlayers Int        @default(10)
+  /// Serialised GameSettings.
+  settings   Json
+  hostId     String?
+  host       User?      @relation("RoomHost", fields: [hostId], references: [id], onDelete: SetNull)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  closedAt   DateTime?
+
+  players GamePlayer[]
+  games   Game[]
+
+  @@index([status, updatedAt])
+  @@map("game_rooms")
+}
+
+/// A seat in a room. Survives disconnects so a player can reclaim it.
+model GamePlayer {
+  id          String   @id @default(uuid())
+  roomId      String
+  room        GameRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  /// Set for registered players.
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  /// Stable anonymous identity, embedded in the player's session token.
+  guestId     String?
+  displayName String
+  seat        Int      @default(0)
+  isHost      Boolean  @default(false)
+  isSpectator Boolean  @default(false)
+
+  /// Current-game secrets. Cleared when the game ends.
+  role  Role?
+  team  Team?
+  alive Boolean @default(true)
+
+  connected  Boolean  @default(true)
+  joinedAt   DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+
+  actions      GameAction[]
+  votesCast    Vote[]       @relation("Voter")
+  votesAgainst Vote[]       @relation("VoteTarget")
+
+  @@unique([roomId, displayName])
+  @@index([roomId])
+  @@map("game_players")
+}
+
+model Game {
+  id             String     @id @default(uuid())
+  roomId         String
+  room           GameRoom   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  /// 1 for the first game in a room, incremented by each rematch.
+  gameNumber     Int        @default(1)
+  currentPhase   Phase      @default(LOBBY)
+  phaseStartedAt DateTime?
+  phaseEndsAt    DateTime?
+  dayNumber      Int        @default(0)
+  status         GameStatus @default(ACTIVE)
+  winner         Team?
+  /// Full serialised GameState — the crash-recovery record.
+  stateSnapshot  Json?
+  /// Public final roster, written once at game over.
+  result         Json?
+  startedAt      DateTime   @default(now())
+  endedAt        DateTime?
+
+  actions GameAction[]
+  votes   Vote[]
+  events  GameEvent[]
+
+  @@unique([roomId, gameNumber])
+  @@index([roomId, status])
+  @@map("games")
+}
+
+model GameAction {
+  id             String   @id @default(uuid())
+  gameId         String
+  game           Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  playerId       String
+  player         GamePlayer @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  actionType     String
+  targetPlayerId String?
+  phase          Phase
+  dayNumber      Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  @@index([gameId, dayNumber])
+  @@map("game_actions")
+}
+
+model Vote {
+  id        String   @id @default(uuid())
+  gameId    String
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  voterId   String
+  voter     GamePlayer @relation("Voter", fields: [voterId], references: [id], onDelete: Cascade)
+  /// Null represents an explicit "skip".
+  targetId  String?
+  target    GamePlayer? @relation("VoteTarget", fields: [targetId], references: [id], onDelete: Cascade)
+  round     Int
+  createdAt DateTime @default(now())
+
+  @@unique([gameId, round, voterId])
+  @@index([gameId, round])
+  @@map("votes")
+}
+
+model GameEvent {
+  id         String          @id @default(uuid())
+  gameId     String
+  game       Game            @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  type       String
+  visibility EventVisibility @default(PUBLIC)
+  /// Recipient player ids for PRIVATE events.
+  audience   String[]        @default([])
+  dayNumber  Int             @default(0)
+  phase      Phase
+  message    String
+  payload    Json?
+  createdAt  DateTime        @default(now())
+
+  @@index([gameId, createdAt])
+  @@map("game_events")
+}

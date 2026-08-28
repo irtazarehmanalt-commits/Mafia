@@ -1,0 +1,37 @@
+{
+  "name": "mafia-game",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-ready real-time online multiplayer Mafia game",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,web -c magenta,cyan \"npm:dev:server\" \"npm:dev:web\"",
+    "dev:server": "npm run dev --workspace @mafia/server",
+    "dev:web": "npm run dev --workspace @mafia/web",
+    "build": "npm run build --workspace @mafia/server && npm run build --workspace @mafia/web",
+    "start": "concurrently -n server,web -c magenta,cyan \"npm:start:server\" \"npm:start:web\"",
+    "start:server": "npm run start --workspace @mafia/server",
+    "start:web": "npm run start --workspace @mafia/web",
+    "test": "npm run test --workspace @mafia/game-engine",
+    "test:watch": "npm run test:watch --workspace @mafia/game-engine",
+    "test:coverage": "npm run test:coverage --workspace @mafia/game-engine",
+    "test:e2e": "node tools/e2e-smoke.mjs",
+    "assets:fetch": "node tools/fetch-images.mjs",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "db:generate": "npm run db:generate --workspace @mafia/server",
+    "db:migrate": "npm run db:migrate --workspace @mafia/server",
+    "db:push": "npm run db:push --workspace @mafia/server",
+    "db:studio": "npm run db:studio --workspace @mafia/server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "typescript": "^5.7.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

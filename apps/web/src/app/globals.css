@@ -1,0 +1,527 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===========================================================================
+   Modernist — design-system tokens and component classes.
+   Light by day, inverted at night: adding `.dark` to any wrapper re-points
+   every semantic token, so a screen changes theme without changing markup.
+   =========================================================================== */
+
+@layer base {
+  :root {
+    --color-bg: #f3f2f2;
+    --color-surface: #eae9e9;
+    --color-text: #201e1d;
+    --color-accent: #ec3013;
+    --color-accent-2: #e15b47;
+    --color-divider: color-mix(in srgb, #201e1d 40%, transparent);
+
+    --muted: #7d7979;
+    --tile-bg: #eeecec;
+    --tint: #ffe0d9;
+    --overlay: rgba(32, 30, 29, 0.55);
+
+    --color-neutral-100: #f8f4f4;
+    --color-neutral-200: #eae7e7;
+    --color-neutral-300: #d7d3d3;
+    --color-neutral-400: #bab6b6;
+    --color-neutral-500: #9b9797;
+    --color-neutral-600: #7d7979;
+    --color-neutral-700: #605d5d;
+    --color-neutral-800: #444141;
+    --color-neutral-900: #2d2b2b;
+
+    --color-accent-100: #fff2ef;
+    --color-accent-400: #ff9783;
+    --color-accent-500: #ff563c;
+    --color-accent-600: #dd2b0f;
+    --color-accent-700: #ae1800;
+    --color-accent-800: #7c1405;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-6: 24px;
+    --space-8: 32px;
+
+    --radius-sm: 0px;
+    --radius-md: 0px;
+    --radius-lg: 0px;
+
+    --shadow-sm: 0 1px 2px color-mix(in srgb, #2d2b2b 14%, transparent);
+    --shadow-md: 0 3px 10px color-mix(in srgb, #2d2b2b 16%, transparent);
+    --shadow-lg: 0 12px 32px color-mix(in srgb, #2d2b2b 22%, transparent);
+  }
+
+  /* Night. Same tokens, inverted values — nothing else has to know. */
+  .dark {
+    --color-bg: #0e0d0d;
+    --color-surface: #1a1817;
+    --color-text: #f3f2f2;
+    --color-divider: rgba(243, 242, 242, 0.3);
+    --muted: #9b9797;
+    --tile-bg: #191717;
+    --tint: #2c1310;
+    --overlay: rgba(0, 0, 0, 0.66);
+    --color-neutral-300: #3a3737;
+    --color-neutral-700: #bab6b6;
+    --color-neutral-800: #d7d3d3;
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-archivo), system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100dvh;
+    /* The theme colour is set on a wrapper; the transition keeps day→night
+       from snapping when the phase changes. */
+    transition: background-color 400ms ease, color 400ms ease;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: 800;
+    line-height: 1.12;
+    letter-spacing: -0.015em;
+    margin: 0 0 var(--space-2);
+  }
+
+  p {
+    margin: 0 0 var(--space-3);
+  }
+
+  a {
+    color: var(--color-accent);
+    text-underline-offset: 3px;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+  }
+
+  :focus {
+    outline: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-accent) 30%, transparent);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-divider);
+  }
+}
+
+@layer components {
+  /* --- Typographic utilities ---------------------------------------------- */
+
+  /* The system's workhorse label: 11px, uppercase, wide tracking. */
+  .lbl {
+    @apply font-sans;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    line-height: 1.3;
+  }
+
+  .mono {
+    font-family: ui-monospace, Menlo, monospace;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+  }
+
+  /* The NIGHTFALL wordmark. */
+  .mark {
+    font-weight: 900;
+    font-size: 17px;
+    letter-spacing: 0.16em;
+    line-height: 1;
+  }
+
+  .text-muted {
+    color: var(--muted);
+  }
+
+  /* Oversized editorial headline. Scales down on small screens so the
+     150px night type doesn't overrun a phone. */
+  .display {
+    font-weight: 900;
+    line-height: 0.88;
+    letter-spacing: -0.04em;
+    margin: 0;
+  }
+
+  /* --- Structure ---------------------------------------------------------- */
+
+  /* Top bar. 66px, one 2px rule beneath it. */
+  .bar {
+    height: 66px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 0 clamp(16px, 3vw, 32px);
+    border-bottom: 2px solid var(--color-divider);
+  }
+
+  .rule {
+    height: 2px;
+    border: 0;
+    background: var(--color-divider);
+  }
+
+  /* --- Buttons ------------------------------------------------------------ */
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    font-weight: 800;
+    font-size: 14px;
+    line-height: 1.2;
+    color: var(--color-text);
+    background: transparent;
+    border: 1px solid transparent;
+    padding: var(--space-2) calc(var(--space-3) * 1.2);
+    border-radius: var(--radius-md);
+    transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+  }
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: var(--color-accent);
+    color: var(--color-bg);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--color-accent-600);
+  }
+  .btn-primary:active:not(:disabled) {
+    background: var(--color-accent-700);
+  }
+  .btn-secondary {
+    border-color: var(--color-divider);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-text) 7%, transparent);
+  }
+  .btn-secondary:active:not(:disabled) {
+    background: color-mix(in srgb, var(--color-text) 14%, transparent);
+  }
+  .btn-ghost {
+    color: var(--color-accent);
+    padding-inline: var(--space-1);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  }
+  .btn-danger {
+    color: var(--color-accent-700);
+  }
+  .btn-danger:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  }
+  /* The primary call to action on every screen: big, left-aligned label. */
+  .btn-lg {
+    font-size: 16px;
+    padding: 14px 22px;
+    justify-content: flex-start;
+  }
+  .btn-icon {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  /* --- Forms -------------------------------------------------------------- */
+
+  .field > label {
+    display: block;
+    font-size: 12px;
+    margin-bottom: 5px;
+    color: color-mix(in srgb, var(--color-text) 70%, transparent);
+  }
+
+  .input {
+    width: 100%;
+    min-height: 36px;
+    padding: 6px 10px;
+    font: inherit;
+    font-size: 14px;
+    color: var(--color-text);
+    caret-color: var(--color-accent);
+    background: var(--color-surface);
+    border: 1px solid var(--color-divider);
+    border-radius: var(--radius-md);
+  }
+  .input::placeholder {
+    color: var(--muted);
+  }
+  .input:hover {
+    border-color: color-mix(in srgb, var(--color-text) 45%, transparent);
+  }
+  .input:focus-visible {
+    border-color: var(--color-accent);
+    outline-offset: 0;
+  }
+  .dark .input {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  /* Segmented control — the system's radio group. */
+  .seg {
+    display: inline-flex;
+    overflow: hidden;
+    border: 1px solid var(--color-divider);
+    border-radius: var(--radius-md);
+  }
+  .seg-opt {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 7px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    background: transparent;
+    color: var(--color-text);
+    border: 0;
+    transition: background-color 120ms ease;
+  }
+  .seg-opt + .seg-opt {
+    border-left: 1px solid var(--color-divider);
+  }
+  .seg-opt[aria-pressed='true'] {
+    background: var(--color-accent);
+    color: var(--color-bg);
+  }
+  .seg-opt:not([aria-pressed='true']):hover {
+    background: color-mix(in srgb, var(--color-text) 7%, transparent);
+  }
+
+  /* --- Tags --------------------------------------------------------------- */
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding: 3px 10px;
+    white-space: nowrap;
+  }
+  .tag-accent {
+    background: var(--color-accent-100);
+    color: var(--color-accent-800);
+  }
+  .tag-neutral {
+    background: var(--color-neutral-100);
+    color: var(--color-neutral-800);
+  }
+  .tag-outline {
+    border: 1px solid var(--color-accent);
+    color: var(--color-accent);
+  }
+  /* On a dark ground the filled tags lose contrast — outline in the text
+     colour instead. */
+  .dark .tag-neutral {
+    background: transparent;
+    border: 1px solid var(--color-divider);
+    color: var(--color-text);
+  }
+  .dark .tag-accent {
+    background: var(--tint);
+    color: var(--color-accent-400);
+  }
+
+  /* --- Player tile -------------------------------------------------------- */
+
+  .tile {
+    border: 1px solid var(--color-divider);
+    padding: 14px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    background: var(--tile-bg);
+    text-align: left;
+    width: 100%;
+    transition: border-color 120ms ease, background-color 120ms ease;
+  }
+  .tile-selectable {
+    cursor: pointer;
+  }
+  .tile-selectable:hover:not(:disabled) {
+    border-color: var(--color-accent);
+  }
+  .tile-selected {
+    border: 2px solid var(--color-accent);
+    background: var(--tint);
+    padding: 13px;
+  }
+  .tile-dead {
+    opacity: 0.45;
+  }
+
+  /* Avatar: initials in a hard square. */
+  .av {
+    width: 42px;
+    height: 42px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: 14px;
+    background: var(--color-neutral-300);
+    color: var(--color-text);
+  }
+  .av-sm {
+    width: 30px;
+    height: 30px;
+    font-size: 11px;
+  }
+  .av-accent {
+    background: var(--color-accent);
+    color: var(--color-bg);
+  }
+
+  .pname {
+    font-weight: 700;
+    font-size: 15px;
+    line-height: 1.2;
+  }
+
+  /* --- Table -------------------------------------------------------------- */
+
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  .table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: var(--space-2);
+    border-bottom: 2px solid var(--color-divider);
+  }
+  .table td {
+    padding: var(--space-2);
+    border-bottom: 1px solid var(--color-divider);
+  }
+
+  /* --- Dialog ------------------------------------------------------------- */
+
+  .dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-items: center;
+    padding: var(--space-4);
+    background: var(--overlay);
+  }
+  .dialog {
+    width: min(940px, 100%);
+    max-height: 90dvh;
+    overflow: auto;
+    background: var(--color-bg);
+    border: 2px solid var(--color-text);
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* --- Layout helpers ----------------------------------------------------- */
+
+  /* Data pair used along the foot of the split screens. */
+  .stat {
+    padding: 18px 24px 0;
+    border-left: 1px solid var(--color-divider);
+  }
+  .stat:first-child {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .stat-n {
+    font-weight: 900;
+    font-size: 30px;
+    line-height: 1;
+  }
+
+  /* A row of key/value lines separated by hairlines. */
+  .kv {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--color-divider);
+  }
+  .kv-v {
+    font-weight: 700;
+    font-size: 14px;
+  }
+}
+
+@layer utilities {
+  .min-h-0 {
+    min-height: 0;
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
