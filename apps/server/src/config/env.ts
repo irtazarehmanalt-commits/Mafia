@@ -32,13 +32,26 @@ if (isProduction && raw.AUTH_SECRET.startsWith('dev-only-insecure')) {
   process.exit(1);
 }
 
+/**
+ * Browsers send `Origin` as a full URL, but hosting platforms often expose a
+ * service address as a bare hostname. Normalise so `nightfall-web.onrender.com`
+ * and `https://nightfall-web.onrender.com` both match.
+ */
+function normalizeOrigin(value: string): string {
+  const raw = value.trim();
+  if (!raw || raw === '*') return raw;
+  if (/^https?:\/\//i.test(raw)) return raw.replace(/\/$/, '');
+  const local = /^(localhost|127\.0\.0\.1|0\.0\.0\.0)(:|$)/.test(raw);
+  return `${local ? 'http' : 'https'}://${raw}`.replace(/\/$/, '');
+}
+
 export const env = {
   ...raw,
   isProduction,
   isDevelopment: raw.NODE_ENV === 'development',
   /** Parsed allow-list used by both CORS and the Socket.IO handshake. */
   corsOrigins: raw.CORS_ORIGIN.split(',')
-    .map((o) => o.trim())
+    .map((o) => normalizeOrigin(o))
     .filter(Boolean),
   databaseEnabled: Boolean(raw.DATABASE_URL),
   redisEnabled: Boolean(raw.REDIS_URL),

@@ -1,0 +1,77 @@
+# Render Blueprint — creates both services at once.
+#
+# Render dashboard → New → Blueprint → pick this repo. That is far less
+# error-prone than filling the "New Web Service" form twice, because the web
+# app's build needs the game server's URL and the game server's CORS needs the
+# web app's URL.
+#
+# The two services must stay separate: Render exposes a single port per
+# service, and the Socket.IO server needs a host that keeps long-lived
+# WebSocket connections open.
+
+services:
+  # --- Game server: Express + Socket.IO ------------------------------------
+  - type: web
+    name: nightfall-server
+    runtime: node
+    plan: free
+    region: ohio
+    branch: main
+    # No rootDir: npm workspaces have to install from the repository root.
+    # `prisma generate` is explicit because the schema lives in a workspace
+    # package, where the postinstall hook does not always find it.
+    buildCommand: >-
+      npm install &&
+      npm run db:generate --workspace @mafia/server &&
+      npm run build --workspace @mafia/server
+    startCommand: npm run start --workspace @mafia/server
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      # Render generates a strong value and keeps it out of the repo.
+      - key: AUTH_SECRET
+        generateValue: true
+      # Browser origin allowed to reach the socket. Wired to the web service.
+      - key: CORS_ORIGIN
+        fromService:
+          type: web
+          name: nightfall-web
+          property: host
+      - key: LOG_LEVEL
+        value: info
+      # Optional. Without these the server runs in ephemeral mode: fully
+      # playable, but rooms are lost when the instance restarts or spins down.
+      # - key: DATABASE_URL
+      #   sync: false
+      # - key: REDIS_URL
+      #   sync: false
+
+  # --- Web client: Next.js -------------------------------------------------
+  - type: web
+    name: nightfall-web
+    runtime: node
+    plan: free
+    region: ohio
+    branch: main
+    buildCommand: npm install && npm run build --workspace @mafia/web
+    startCommand: npm run start --workspace @mafia/web
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      # NEXT_PUBLIC_* values are inlined at BUILD time, so these must be
+      # present before the build runs — not just at boot.
+      - key: NEXT_PUBLIC_SOCKET_SERVER_URL
+        fromService:
+          type: web
+          name: nightfall-server
+          property: host
+      - key: NEXT_PUBLIC_APP_URL
+        fromService:
+          type: web
+          name: nightfall-web
+          property: host
