@@ -63,6 +63,11 @@ services:
         value: "22"
       - key: NODE_ENV
         value: production
+      # `next build` on a 512 MB free instance is routinely OOM-killed (exit
+      # 137). Capping the V8 heap below the container limit makes it collect
+      # garbage instead of ballooning past the cgroup and being shot.
+      - key: NODE_OPTIONS
+        value: --max-old-space-size=460
       # NEXT_PUBLIC_* values are inlined at BUILD time, so these must be
       # present before the build runs — not just at boot.
       - key: NEXT_PUBLIC_SOCKET_SERVER_URL

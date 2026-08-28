@@ -27,8 +27,24 @@ const raw = parsed.data;
 
 const isProduction = raw.NODE_ENV === 'production';
 
+// Session tokens are HMAC-signed with this key. Booting production with the
+// public development default would let anyone forge a token for any seat in
+// any room, so refuse to start rather than come up insecure.
 if (isProduction && raw.AUTH_SECRET.startsWith('dev-only-insecure')) {
-  console.error('AUTH_SECRET must be set to a strong secret in production.');
+  console.error(
+    [
+      'AUTH_SECRET is not set.',
+      '',
+      'This key signs player session tokens. Starting without it would let',
+      'anyone forge a session for any seat, so the server will not boot.',
+      '',
+      'Set it in your host\'s environment settings (Render: Environment →',
+      'Add Environment Variable), then redeploy. Generate a value with:',
+      '',
+      '  openssl rand -base64 48',
+      '  node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'base64\'))"',
+    ].join('\n'),
+  );
   process.exit(1);
 }
 

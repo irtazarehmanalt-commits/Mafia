@@ -70,8 +70,15 @@ async function main(): Promise<void> {
   const manager = new RoomManager(io);
   app.use('/api', createRouter(manager));
 
+  // This host serves JSON and WebSockets only — the playable site is the web
+  // app. Say so plainly, because someone will inevitably open the root URL.
   app.get('/', (_req, res) => {
-    res.json({ name: 'mafia-game-server', status: 'ok' });
+    res.json({
+      name: 'nightfall-server',
+      status: 'ok',
+      note: 'This is the Nightfall game server (API + WebSockets). The game itself is served by the web app.',
+      health: '/api/health',
+    });
   });
 
   registerSocketHandlers(io, manager);

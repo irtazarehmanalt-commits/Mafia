@@ -5,7 +5,12 @@
  */
 import { io } from 'socket.io-client';
 
-const BASE = 'http://localhost:4000';
+// Defaults to a local dev server; pass a URL to smoke-test a real deployment:
+//   node tools/e2e-smoke.mjs https://nightfall-server.onrender.com
+const BASE = (process.argv[2] ?? process.env.MAFIA_SERVER_URL ?? 'http://localhost:4000').replace(
+  /\/$/,
+  '',
+);
 const NAMES = ['Alice', 'Bob', 'Cara', 'Dan', 'Eve', 'Frank'];
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

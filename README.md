@@ -270,6 +270,16 @@ real Socket.IO clients and plays a complete game, asserting among other things
 that a Civilian's payload contains no other player's role and that a Detective's
 result reaches exactly one socket.
 
+It also runs against a deployment — a fast way to confirm a release actually
+works over `wss://` before pointing the front-end at it:
+
+```bash
+node tools/e2e-smoke.mjs https://your-server.onrender.com
+```
+
+Node clients send no `Origin` header, so this bypasses CORS and tests the
+socket layer itself.
+
 ---
 
 ## Socket architecture
